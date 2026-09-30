@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze of Numbers - Math Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus+Jakarta+Sans', sans-serif;
+            background: radial-gradient(circle at center, #1a2e1a 0%, #0a0f0a 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow: hidden; 
+        }
+
+        .forest-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                linear-gradient(to bottom, rgba(10, 15, 10, 0.7), rgba(10, 15, 10, 0.9)),
+                url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            filter: saturate(0.8) contrast(1.1);
+        }
+
+        .antique-font {
+            font-family: 'Cinzel', serif;
+        }
+
+        .firefly {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #34d399, 0 0 20px #10b981;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0;
+            animation: moveFirefly 15s linear infinite, glowFirefly 3s ease-in-out infinite;
+        }
+
+        @keyframes moveFirefly {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(100px, -50px); }
+            50% { transform: translate(50px, -150px); }
+            75% { transform: translate(-50px, -100px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @keyframes glowFirefly {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+
+        .shiny-text {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(
+                to right, 
+                #34d399 10%, 
+                #a7f3d0 30%, 
+                #ffffff 50%, 
+                #a7f3d0 70%, 
+                #34d399 90%
+            );
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 5s linear infinite;
+            text-shadow: 0 0 30px rgba(52, 211, 153, 0.3);
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .magic-card {
+            background: rgba(10, 22, 12, 0.92);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            max-height: 98vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: left;
+            min-height: 60px;
+            padding: 0.75rem 1rem;
+        }
+
+        .option-btn:hover {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: rgba(52, 211, 153, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .maze-node {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1f2937;
+            transition: all 0.4s ease;
+        }
+
+        .maze-node.active { background: #34d399; box-shadow: 0 0 10px #34d399; transform: scale(1.3); }
+        .maze-node.passed { background: #059669; }
+        .maze-line { height: 2px; background: #1f2937; flex-grow: 1; }
+        .maze-line.passed { background: #059669; }
+
+        .shake { animation: shake 0.4s both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
+            40%, 60% { transform: translate3d(2px, 0, 0); }
+        }
+
+        .story-text {
+            color: #d1fae5;
+            opacity: 0.85;
+            font-size: 0.85rem;
+            border-left: 3px solid #10b981;
+            padding-left: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="forest-bg"></div>
+    <div id="fireflies-container"></div>
+    
+    <div id="game-container" class="w-full max-w-lg relative">
+        <!-- Start Screen -->
+        <div id="start-screen" class="magic-card p-10 rounded-[3rem] text-center">
+            <h1 class="text-4xl md:text-6xl shiny-text font-black mb-4 tracking-tighter">
+                MAZE OF NUMBERS
+            </h1>
+            <p class="text-emerald-100/70 mb-8 text-sm md:text-lg font-bold uppercase tracking-[0.4em] antique-font">
+                Misteri Labirin Logika
+            </p>
+            
+            <button onclick="startGame()" class="relative px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-full transition-all transform hover:scale-105 shadow-2xl group overflow-hidden text-lg uppercase tracking-widest antique-font">
+                <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shine_1.5s_infinite]"></span>
+                <span class="flex items-center gap-3 relative justify-center">
+                    Mulai Eksplorasi
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </span>
+            </button>
+            
+            <div class="mt-12 flex justify-center items-center gap-4 text-[10px] uppercase tracking-[0.2em] text-emerald-200/40 font-black antique-font">
+                <span>10 Tahap</span>
+                <span class="w-1 h-1 bg-emerald-200/20 rounded-full"></span>
+                <span>Waktu Terbatas</span>
+                <span class="w-1 h-1 bg-emerald-200/20 rounded-full"></span>
+                <span>Progresif</span>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden space-y-4">
+            <!-- Header Info -->
+            <div class="flex justify-between items-center bg-black/70 px-6 py-4 rounded-3xl border border-emerald-500/20 shadow-xl antique-font">
+                <div class="flex flex-col">
+                    <span class="text-[9px] text-emerald-500 uppercase font-black">Skor</span>
+                    <span id="score" class="text-lg font-black text-white">0</span>
+                </div>
+                <div id="maze-map" class="flex items-center gap-1 w-2/5 justify-center"></div>
+                <div class="flex flex-col items-end">
+                    <span class="text-[9px] text-rose-500 uppercase font-black">Kesehatan</span>
+                    <div id="hearts" class="flex gap-1 text-sm">❤️❤️❤️</div>
+                </div>
+            </div>
+
+            <!-- Main Question Area -->
+            <div id="question-card" class="magic-card p-6 md:p-8 rounded-[2.5rem] relative">
+                <div id="timer-bar" class="absolute top-0 left-0 h-1 bg-emerald-400 transition-all duration-1000" style="width: 100%"></div>
+                
+                <div class="flex justify-between items-center mb-4 antique-font">
+                    <span id="level-label" class="text-[9px] font-black bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 uppercase tracking-widest">
+                        Tahap 1
+                    </span>
+                    <span id="timer-text" class="text-xs font-mono font-black text-emerald-400">--:--</span>
+                </div>
+                
+                <p id="story-narrative" class="story-text"></p>
+
+                <h2 id="question-text" class="text-base md:text-lg font-bold mb-6 leading-relaxed text-white/95">
+                    Memuat data...
+                </h2>
+
+                <!-- Options Grid: 2x2 with left-aligned one-line layout -->
+                <div id="options-grid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden magic-card p-10 rounded-[3rem] text-center antique-font">
+            <h2 id="end-title" class="text-3xl shiny-text mb-4">HASIL AKHIR</h2>
+            <div class="text-6xl font-black text-emerald-400 mb-6" id="final-score">0</div>
+            <p id="end-message" class="text-emerald-100/70 mb-8 text-sm px-4 leading-relaxed"></p>
+            <button onclick="location.reload()" class="px-8 py-4 bg-emerald-950/50 border border-emerald-500/50 text-emerald-300 font-black rounded-full uppercase text-[10px] tracking-widest hover:bg-emerald-500/20 transition-all">
+                Mulai Ulang
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function createFireflies() {
+            const container = document.getElementById('fireflies-container');
+            for (let i = 0; i < 15; i++) {
+                const f = document.createElement('div');
+                f.className = 'firefly';
+                f.style.left = Math.random() * 100 + 'vw';
+                f.style.top = Math.random() * 100 + 'vh';
+                f.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(f);
+            }
+        }
+
+        window.onload = createFireflies;
+
+        const questions = [
+            { s: "Gerbang utama memerlukan verifikasi nilai eksponen.", q: "Jika 3^(x+2) = 81, berapakah nilai dari x² + 2x?", options: ["4", "8", "12", "15"], correct: 1 },
+            { s: "Analisis struktur jembatan diperlukan untuk stabilitas.", q: "Nilai limit x → 0 dari (sin 4x) / (3x) adalah...", options: ["1/3", "3/4", "4/3", "4"], correct: 2 },
+            { s: "Hitung laju energi untuk menonaktifkan penghalang.", q: "Turunan f(x) = sin²(3x) adalah f'(x) = ...", options: ["2 sin(3x)", "3 sin(6x)", "6 sin(3x)cos(3x)", "3 sin(3x)cos(3x)"], correct: 2 },
+            { s: "Tentukan koordinat berikutnya pada pola lantai.", q: "U3=11, U7=23 (aritmetika). Berapa U10?", options: ["29", "32", "35", "38"], correct: 1 },
+            { s: "Kalkulasi volume cairan penyeimbang pintu rahasia.", q: "Nilai ∫ (3x² - 4x + 5) dx dari 0 sampai 2 adalah...", options: ["6", "10", "14", "18"], correct: 1 },
+            { s: "Permutasi kode diperlukan untuk meretas peti.", q: "Banyak cara menyusun huruf kata 'KATA'?", options: ["6", "12", "24", "48"], correct: 1 },
+            { s: "Sederhanakan logaritma untuk fragmen data.", q: "Jika log 2=a, log 3=b, maka log 18 adalah...", options: ["a + 2b", "2a + b", "a + b²", "a + b"], correct: 0 },
+            { s: "Titik potong kuadrat untuk keseimbangan pilar.", q: "Akar x²-5x+6=0 adalah p,q. Nilai p²+q²?", options: ["13", "19", "25", "31"], correct: 0 },
+            { s: "Peluang meminimalkan risiko keputusan strategis.", q: "5 bola merah, 3 biru. Ambil 2, peluang keduanya merah?", options: ["5/14", "10/28", "15/56", "25/64"], correct: 0 },
+            { s: "Sinkronisasi koordinat akhir.", q: "Penyelesaian cos x = 1/2 (0≤x≤360°) adalah...", options: ["{30°, 330°}", "{60°, 300°}", "{60°, 120°}", "{45°, 315°}"], correct: 1 }
+        ];
+
+        let currentQuestion = 0, score = 0, lives = 3, timer, timeLeft = 0;
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            initMaze();
+            loadQuestion();
+        }
+
+        function initMaze() {
+            const mazeMap = document.getElementById('maze-map');
+            mazeMap.innerHTML = '';
+            for (let i = 0; i < questions.length; i++) {
+                const node = document.createElement('div');
+                node.className = `maze-node ${i === 0 ? 'active' : ''}`;
+                node.id = `node-${i}`;
+                mazeMap.appendChild(node);
+                if (i < questions.length - 1) {
+                    const line = document.createElement('div');
+                    line.className = 'maze-line';
+                    line.id = `line-${i}`;
+                    mazeMap.appendChild(line);
+                }
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestion >= questions.length) return endGame(true);
+            const q = questions[currentQuestion];
+            
+            document.getElementById('level-label').innerText = `Tahap ${currentQuestion + 1}`;
+            document.getElementById('story-narrative').innerText = q.s;
+            document.getElementById('question-text').innerText = q.q;
+            
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn rounded-xl flex items-center gap-3 group';
+                btn.innerHTML = `
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[11px] font-black text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                        ${String.fromCharCode(65 + index)}
+                    </div>
+                    <span class="text-emerald-50/90 font-bold text-xs md:text-sm leading-tight">${opt}</span>
+                `;
+                btn.onclick = () => checkAnswer(index);
+                grid.appendChild(btn);
+            });
+            updateMaze();
+            resetTimer();
+        }
+
+        function updateMaze() {
+            for (let i = 0; i < questions.length; i++) {
+                const node = document.getElementById(`node-${i}`);
+                if (node) node.className = i < currentQuestion ? 'maze-node passed' : (i === currentQuestion ? 'maze-node active' : 'maze-node');
+                const line = document.getElementById(`line-${i}`);
+                if (line) line.className = i < currentQuestion ? 'maze-line passed' : 'maze-line';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            let totalTime = currentQuestion > 5 ? 15 : 25; 
+            timeLeft = totalTime;
+            const bar = document.getElementById('timer-bar');
+            const text = document.getElementById('timer-text');
+            timer = setInterval(() => {
+                timeLeft--;
+                bar.style.width = (timeLeft / totalTime) * 100 + '%';
+                text.innerText = timeLeft + 's';
+                if (timeLeft <= 0) { clearInterval(timer); handleWrong(); }
+            }, 1000);
+        }
+
+        function checkAnswer(idx) {
+            if (idx === questions[currentQuestion].correct) {
+                score += 100 + (timeLeft * 2);
+                document.getElementById('score').innerText = score;
+                currentQuestion++;
+                loadQuestion();
+            } else handleWrong();
+        }
+
+        function handleWrong() {
+            lives--;
+            updateHearts(Math.max(0, lives));
+            const card = document.getElementById('question-card');
+            card.classList.add('shake');
+            setTimeout(() => { 
+                card.classList.remove('shake'); 
+                if (lives <= 0) endGame(false); else loadQuestion(); 
+            }, 400);
+        }
+
+        function updateHearts(count) {
+            document.getElementById('hearts').innerHTML = '❤️'.repeat(count) + '🖤'.repeat(3 - count);
+        }
+
+        function endGame(isWin) {
+            clearInterval(timer);
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            const title = document.getElementById('end-title');
+            const msg = document.getElementById('end-message');
+            if (isWin) {
+                title.innerText = "MISI SELESAI";
+                msg.innerText = "Logika Anda telah menembus inti labirin. Anda adalah penguasa angka.";
+            } else {
+                title.innerText = "MISI GAGAL";
+                msg.innerText = "Sistem pertahanan labirin terlalu kuat. Asah kembali logika Anda.";
+            }
+        }
+    </script>
+</body>
+</html>
